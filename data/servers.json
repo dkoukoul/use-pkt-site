@@ -1,0 +1,16 @@
+[
+    {
+        "name": "Sorry 2",
+        "country": "Canada",
+        "cost": 100,
+        "pktaddress": "pkt1qqlefsh85ptg6wk0vkg4c8xspkfzdvwrtym2rvn",
+        "url": "http://51.79.51.242:8099/api/0.4/server/vpnaccess/"
+    },
+    {
+        "name": "Kraut 2",
+        "country": "Germany",
+        "cost": 100,
+        "pktaddress":"pkt1qf8xd63ga8fapuc38g2gs09nvkft5l79xwvw760",
+        "url":"http://135.125.234.102:8099/api/0.4/server/vpnaccess/"
+    }
+]

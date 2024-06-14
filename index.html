@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PKT VPN Access</title>
+    <script src="https://unpkg.com/htmx.org@1.6.1"></script>
+    <link rel="stylesheet" type="text/css" href="assets/style.css">
+</head>
+<body>
+    
+    <div class="header">
+        <img src="assets/icons/pkt-logo.svg"><h1>Buy VPN access to PKT network</h1>
+    </div>
+    <div class="container">
+        <div class="steps">
+            <h2 class="toggle-header">How to buy your own VPN access &nbsp;<span class="arrow">&#9660;</span></h2>
+            <div class="toggle-content">
+                <ul>
+                    <li>Select a server, its PKT address will be copied to your clipbard.</li>
+                    <li>Make payment of 100 PKT by pasting its address using your PKT wallet.</li>
+                    <li>Get the transaction id of the payment and paste it in the text field below.</li>
+                    <li>Request VPN credentials</li>
+                    <li>The files will appear ready to be downloaded</li>
+                </ul>
+                <p>Sorry 2 server currently provides files for IOS, OSX, Linux, Android.<br/> Kraut 2 will soon offer support for Windows clients.</p>
+            </div>
+        </div>
+
+        <div class="servers-list" id="vpn-list">
+        </div>
+        <div class="get">
+            <input type="text" id="transaction-id" placeholder="Paste your transaction ID here">
+            <button id="get-credentials" disabled>Get VPN credentials</button>
+            <p id="response"></p>
+        </div>
+        <div id="files">
+
+        </div>
+        <div class="help">
+            <h2 class="toggle-header">How to connect on IOS &nbsp;<span class="arrow">&#9660;</span></h2>
+            <div class="toggle-content">lorem ipsum</div>
+            <h2 class="toggle-header">How to connect on macOS &nbsp;<span class="arrow">&#9660;</span></h2>
+            <div class="toggle-content">lorem ipsum</div>
+            <h2 class="toggle-header">How to connect on Android &nbsp;<span class="arrow">&#9660;</span></h2>
+            <div class="toggle-content">lorem ipsum</div>
+            <h2 class="toggle-header">How to connect on Windows &nbsp;<span class="arrow">&#9660;</span></h2>
+            <div class="toggle-content">lorem ipsum</div>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>
