@@ -45,6 +45,24 @@ function showNotification(message) {
     }, 2000);
 }
 
+function selectText(nodeId) {
+    const node = document.getElementById(nodeId);
+
+    if (document.body.createTextRange) {
+        const range = document.body.createTextRange();
+        range.moveToElementText(node);
+        range.select();
+    } else if (window.getSelection) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    } else {
+        console.warn("Could not select text in node: Unsupported browser.");
+    }
+}
+
 function createVpnServerList() {
     fetch('/api/vpn-servers')
     .then(response => response.json())
@@ -56,7 +74,7 @@ function createVpnServerList() {
             div.dataset.url = server.url;
             div.dataset.pktaddress = server.pktaddress;
             div.dataset.cost = server.cost;
-            div.innerHTML = `<div class="top-row"><img src="assets/images/flags/${server.country}.svg"><span>${server.name}</span></div><div class="pkt-address">${server.pktaddress}</div>`;
+            div.innerHTML = `<div class="top-row"><img src="assets/images/flags/${server.country}.svg"><span>${server.name}</span></div><div id="pktaddress-${server.name}" class="pkt-address">${server.pktaddress}</div>`;
             div.addEventListener('click', function() {
                 if(this.classList.contains('selected')) {
                     this.classList.remove('selected');
@@ -64,8 +82,8 @@ function createVpnServerList() {
                 } else {
                     vpnList.querySelectorAll('.server-item').forEach(i => i.classList.remove('selected'));
                     this.classList.add('selected');
-                    navigator.clipboard.writeText(server.pktaddress);
-                    showNotification('PKT address has been copied');
+                    selectText("pktaddress-"+server.name);
+                    showNotification('PKT address has been selected press Ctrl+C to copy it.');
                 }
             });
 
@@ -81,6 +99,8 @@ function showFiles(message) {
     const files = message.match(regex);
     console.log(files);
     const filesDiv = document.getElementById('files');
+    filesDiv.innerHTML = '';
+
     files.forEach(file => {
         const fileName = file.split('/').pop();
         const fileLink = document.createElement('a');
@@ -96,13 +116,13 @@ function showFiles(message) {
             macosIcon.src = 'assets/icons/MacOS_logo.png';
             fileLink.appendChild(macosIcon);
         } else if (fileName.endsWith('.ovpn')) {
-            const androidIcon = document.createElement('img');
-            androidIcon.src = 'assets/icons/android-logo.png'; 
-            fileLink.appendChild(androidIcon);
+            const windowsIcon = document.createElement('img');
+            windowsIcon.src = 'assets/icons/windows-logo.svg'; 
+            fileLink.appendChild(windowsIcon);
         } else if (fileName.endsWith('.sswan')) {
-            const linuxIcon = document.createElement('img');
-            linuxIcon.src = 'assets/icons/android-logo.png';
-            fileLink.appendChild(linuxIcon);
+            const androidIcon = document.createElement('img');
+            androidIcon.src = 'assets/icons/android-logo.png';
+            fileLink.appendChild(androidIcon);
         } else if (fileName.endsWith('.p12')) {
             const linuxIcon = document.createElement('img');
             linuxIcon.src = 'assets/icons/linux-logo.png'; 
