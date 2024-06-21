@@ -18,7 +18,6 @@ document.querySelectorAll('.toggle-header').forEach(header => {
 transactionId.addEventListener('input', function() {
     const vpnList = document.getElementById('vpn-list');
     const selectedServerItem = vpnList.querySelector('.server-item.selected');
-    console.log(this.value.length);
     if (this.value.length === 64 && selectedServerItem) {
         console.log("Enabling button");
         getCredentialsButton.disabled = false;
@@ -99,7 +98,6 @@ function showFiles(message) {
     const files = message.match(regex);
     console.log(files);
     const filesDiv = document.getElementById('files');
-    filesDiv.innerHTML = '';
 
     files.forEach(file => {
         const fileName = file.split('/').pop();
@@ -139,6 +137,8 @@ function showFiles(message) {
 function getCredentials(transactionId) {
     const selectedItem = document.querySelector('.server-item.selected');
     const serverName = selectedItem ? selectedItem.querySelector('span').textContent : '';
+    const filesDiv = document.getElementById('files');
+    filesDiv.innerHTML = '';
     fetch(`/api/get-credentials?transactionId=${transactionId}&serverName=${serverName}`)
         .then(response => response.json())
         .then(data => {
