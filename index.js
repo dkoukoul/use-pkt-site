@@ -1,6 +1,3 @@
-const getCredentialsButton = document.getElementById('get-credentials');
-const transactionId = document.getElementById('transaction-id');
-
 // Toggle the dropdown content for How to use section
 document.querySelectorAll('.toggle-header').forEach(header => {
     header.addEventListener('click', () => {
@@ -14,25 +11,7 @@ document.querySelectorAll('.toggle-header').forEach(header => {
         }
     });
 });
-// Enable/disable the get credentials button based on the length of the transaction ID
-transactionId.addEventListener('input', function() {
-    const vpnList = document.getElementById('vpn-list');
-    const selectedServerItem = vpnList.querySelector('.server-item.selected');
-    if (this.value.length === 64 && selectedServerItem) {
-        console.log("Enabling button");
-        getCredentialsButton.disabled = false;
-    } else {
-        getCredentialsButton.disabled = true;
-    }
-});
 
-document.getElementById('get-credentials').addEventListener('click', function() {    
-    if (transactionId.value.length !== 64) {
-        showNotification('Please input a valid transaction ID');
-    } else {
-        getCredentials(transactionId.value);
-    }
-});
 
 function showNotification(message) {
     const notification = document.createElement('div');
@@ -62,6 +41,22 @@ function selectText(nodeId) {
     }
 }
 
+function updateButtons(serverName) {
+    const getAddressButton = document.getElementById('get-address');
+    const getCredentialsButton = document.getElementById('get-credentials');
+    if (serverName === '') {
+        getAddressButton.innerHTML = 'Request Address';
+        getCredentialsButton.innerHTML = 'Get Credentials';
+        getAddressButton.disabled = true;
+        getCredentialsButton.disabled = true;
+        return;
+    }
+    getAddressButton.innerHTML = 'Request Address from ' + serverName;
+    getCredentialsButton.innerHTML = 'Get Credentials from ' + serverName;
+    getAddressButton.disabled = false;
+    getCredentialsButton.disabled = false;
+}
+
 function createVpnServerList() {
     fetch('/api/vpn-servers')
     .then(response => response.json())
@@ -69,20 +64,23 @@ function createVpnServerList() {
         const vpnList = document.getElementById('vpn-list');
         servers.forEach(server => {
             const div = document.createElement('div');
+            const getAddressButton = document.getElementById('get-address');
             div.className = 'server-item';
             div.dataset.url = server.url;
-            div.dataset.pktaddress = server.pktaddress;
             div.dataset.cost = server.cost;
-            div.innerHTML = `<div class="top-row"><img src="assets/images/flags/${server.country}.svg"><span>${server.name}</span></div><div id="pktaddress-${server.name}" class="pkt-address">${server.pktaddress}</div>`;
+            div.innerHTML = `<div class="top-row"><img src="assets/images/flags/${server.country}.svg"><span>${server.name}</span></div>`;
             div.addEventListener('click', function() {
                 if(this.classList.contains('selected')) {
                     this.classList.remove('selected');
+                    getAddressButton.disabled = true;
+                    updateButtons('');
                     return;
                 } else {
                     vpnList.querySelectorAll('.server-item').forEach(i => i.classList.remove('selected'));
                     this.classList.add('selected');
-                    selectText("pktaddress-"+server.name);
-                    showNotification('PKT address has been selected press Ctrl+C to copy it.');
+                    getAddressButton.disabled = false;
+                    showNotification('Click Request Address button to get a new PKT address for payment.');
+                    updateButtons(server.name);
                 }
             });
 
@@ -134,20 +132,52 @@ function showFiles(message) {
     });
 }
 
-function getCredentials(transactionId) {
+function getCredentials() {
     const selectedItem = document.querySelector('.server-item.selected');
     const serverName = selectedItem ? selectedItem.querySelector('span').textContent : '';
+    const pktAddress = document.getElementById('pktaddress').textContent;
     const filesDiv = document.getElementById('files');
     filesDiv.innerHTML = '';
-    fetch(`/api/get-credentials?transactionId=${transactionId}&serverName=${serverName}`)
+
+    fetch(`/api/get-credentials?serverName=${serverName}&address=${pktAddress}`)
+        .then(response => response.json())
+        .then(data => {
+            try {
+                let jsonData = JSON.parse(data);
+                if (jsonData.status === "success") {
+                    document.getElementById('response').textContent = "";
+                    showFiles(jsonData.message);
+                } else {
+                    document.getElementById('response').textContent = jsonData.message || JSON.stringify(jsonData);
+                }
+            } catch (error) {
+                console.error("Parsing error:", error);
+                document.getElementById('response').textContent = JSON.stringify(data);
+            }
+        })
+        .catch(error => {
+            console.error("Fetch error:", error);
+            document.getElementById('response').textContent = "Network or fetch error occurred.";
+        });
+}
+
+function getAddress() {
+    const selectedItem = document.querySelector('.server-item.selected');
+    const serverName = selectedItem ? selectedItem.querySelector('span').textContent : '';
+    fetch(`/api/get-address?serverName=${serverName}`)
         .then(response => response.json())
         .then(data => {
             let jsonData = JSON.parse(data);
             console.log(jsonData.status);
-            if (jsonData.status === "success") {
-                showFiles(jsonData.message);
+            console.log(jsonData);
+            if (jsonData.address !== "") {
+                pktAddressDiv = document.getElementById('pktaddress');
+                pktAddressDiv.textContent = jsonData.address;
+                document.getElementById('get-credentials').hidden = false;
+                document.getElementById('payInfo').hidden = false;
             } else {
                 document.getElementById('response').textContent = data;
+                document.getElementById('payInfo').hidden = true;
             }
         });
 }

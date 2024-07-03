@@ -20,11 +20,28 @@ type VpnServer struct {
 }
 
 type RequestVpnAccess struct {
-	Txid string `json:"txid"`
+	Address string `json:"address"`
 }
 
 type PKTAddress struct {
 	Address string `json:"address"`
+}
+
+type ExplorerAddressResponse struct {
+	UnconfirmedReceived string  `json:"unconfirmedReceived"` // Required
+	Balance             string  `json:"balance"`             // Required
+	ConfirmedReceived   *string `json:"confirmedReceived,omitempty"`
+	Spending            *string `json:"spending,omitempty"`
+	Spent               *string `json:"spent,omitempty"`
+	Burned              *string `json:"burned,omitempty"`
+	RecvCount           *int    `json:"recvCount,omitempty"`
+	MineCount           *int    `json:"mineCount,omitempty"`
+	SpentCount          *int    `json:"spentCount,omitempty"`
+	BalanceCount        *int    `json:"balanceCount,omitempty"`
+	Mined24             *string `json:"mined24,omitempty"`
+	FirstSeen           *string `json:"firstSeen,omitempty"`
+	Transferred         *int    `json:"transferred,omitempty"`
+	Address             *string `json:"address,omitempty"`
 }
 
 func loadVpnServers() ([]VpnServer, error) {
@@ -40,23 +57,86 @@ func loadVpnServers() ([]VpnServer, error) {
 	return servers, nil
 }
 
-func getCredentials(transactionId string, serverName string) (string, error) {
-	fmt.Println("Getting credentials from", serverName, " for transaction ID: ", transactionId)
+func getAddress(serverName string) (string, error) {
+	fmt.Println("Getting PKT Address from", serverName)
+	servers, _ := loadVpnServers()
+	for _, server := range servers {
+		if server.Name == serverName {
+			getAddressEndpoint := "api/0.4/server/premium/address/"
+
+			// Send the request and get the response
+			client := &http.Client{}
+			resp, err := client.Get(server.Url + getAddressEndpoint)
+			if err != nil {
+				fmt.Println("Error sending request: ", err)
+				continue
+			}
+			defer resp.Body.Close()
+
+			// Read the response body
+			respBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Println("Error reading response body: ", err)
+				continue
+			}
+
+			fmt.Println("Response: ", string(respBody))
+			return string(respBody), nil
+		}
+	}
+	return "", fmt.Errorf("server not found")
+}
+
+func getCredentials(address string, serverName string) (string, error) {
+	fmt.Println("Getting credentials from", serverName, " for address: ", address)
+	if address == "" {
+		return "", fmt.Errorf("missing address")
+	}
+	fmt.Println(address)
+	// check if address has balance
+	explorerUrl := "https://api.packetscan.io/api/v1/PKT/pkt/address/" + address
+	resp, err := http.Get(explorerUrl)
+	if err != nil {
+		fmt.Println("Error getting address balance: ", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body: ", err)
+		return "", err
+	}
+	var explorerResp ExplorerAddressResponse
+
+	err = json.Unmarshal(body, &explorerResp)
+	if err != nil {
+		fmt.Println("Error unmarshalling response body: ", err)
+		return "", err
+	}
+
+	if explorerResp.Balance != "" && explorerResp.Balance != "0" {
+		fmt.Println("The balance is not zero:", explorerResp.Balance)
+	} else if explorerResp.UnconfirmedReceived != "" && explorerResp.UnconfirmedReceived != "0" {
+		return "", fmt.Errorf("address has no confirmed balance yet")
+	} else {
+		return "", fmt.Errorf("address has no balance yet")
+	}
 	servers, _ := loadVpnServers()
 	for _, server := range servers {
 		if server.Name == serverName {
 			fmt.Println("Server found: ", server.Name)
 			request := RequestVpnAccess{
-				Txid: transactionId,
+				Address: address,
 			}
 			reqBody, err := json.Marshal(request)
 			if err != nil {
 				fmt.Println("Error marshalling data: ", err)
 				continue
 			}
-
+			credentialsEndpoint := "api/0.4/server/vpnaccess/"
 			// Create a new request
-			req, err := http.NewRequest("POST", server.Url, bytes.NewBuffer(reqBody))
+			req, err := http.NewRequest("POST", server.Url+credentialsEndpoint, bytes.NewBuffer(reqBody))
 			if err != nil {
 				fmt.Println("Error creating request: ", err)
 				continue
@@ -84,7 +164,7 @@ func getCredentials(transactionId string, serverName string) (string, error) {
 		}
 	}
 
-	return "", nil
+	return "", fmt.Errorf("server not found")
 }
 
 func main() {
@@ -105,15 +185,34 @@ func main() {
 	})
 
 	http.HandleFunc("/api/get-credentials", func(w http.ResponseWriter, r *http.Request) {
-		transactionId := r.URL.Query().Get("transactionId")
+		address := r.URL.Query().Get("address")
 		serverName := r.URL.Query().Get("serverName")
-		if transactionId == "" {
-			http.Error(w, "Missing transaction ID", http.StatusBadRequest)
+		if address == "" {
+			http.Error(w, "Missing address", http.StatusBadRequest)
 			return
 		}
 
 		// Call your function to get the credentials with the transaction ID
-		respBody, err := getCredentials(transactionId, serverName)
+		respBody, err := getCredentials(address, serverName)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		json.NewEncoder(w).Encode(respBody)
+	})
+
+	http.HandleFunc("/api/get-address", func(w http.ResponseWriter, r *http.Request) {
+		serverName := r.URL.Query().Get("serverName")
+		if serverName == "" {
+			http.Error(w, "Missing serverName", http.StatusBadRequest)
+			return
+		}
+
+		// Call your function to get the address with the server name
+		respBody, err := getAddress(serverName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -121,6 +220,7 @@ func main() {
 
 		json.NewEncoder(w).Encode(respBody)
 	})
+
 	fs := http.FileServer(http.Dir("."))
 	http.Handle("/", fs)
 	fmt.Println("Server started on port ", serverPort)

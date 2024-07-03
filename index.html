@@ -15,21 +15,25 @@
             <h2 class="toggle-header">How to buy your own VPN access &nbsp;<span class="arrow">&#9660;</span></h2>
             <div class="toggle-content">
                 <ul>
-                    <li>Select a server, its PKT address will be copied to your clipbard.</li>
-                    <li>Make payment of 100 PKT by pasting its address using your PKT wallet.</li>
-                    <li>Get the transaction id of the payment and paste it in the text field below.</li>
+                    <li>Select a server.</li> 
+                    <li>Request an address by clicking on the button below the servers.</li>
+                    <li>Make payment to the PKT address that will appear of 100 PKT.</li>
+                    <li>Wait for a minute for the payment to be verified.</li>
                     <li>Request VPN credentials</li>
                     <li>The files will appear ready to be downloaded</li>
                 </ul>
-                <p>Sorry 2 server currently provides files for IOS, OSX, Linux, Android.<br/> Kraut 2 will soon offer support for Windows clients.</p>
+                <p></p>
             </div>
         </div>
 
         <div class="servers-list" id="vpn-list">
         </div>
         <div class="get">
-            <input type="text" id="transaction-id" placeholder="Paste your transaction ID here">
-            <button id="get-credentials" disabled>Get VPN credentials</button>
+            <div id="payInfo" hidden>Pay 100 PKT to this address, wait for a minute and then click "Get VPN credentials"</div>
+            <div id="pktaddress" class="pkt-address"></div>
+            <!-- <input type="text" id="transaction-id" placeholder="Paste your transaction ID here"> -->
+            <button id="get-address" onclick='getAddress()' disabled="disabled">Request address</button>
+            <button id="get-credentials" onclick='getCredentials()' disabled hidden>Get VPN credentials</button>
             <p id="response"></p>
         </div>
         <div id="files">
