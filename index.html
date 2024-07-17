@@ -85,6 +85,30 @@
                     <li>Once imported simply click the switch to connect to the VPN</li>
                 </ol>
             </div>
+            <h2 class="toggle-header">How to connect on Linux &nbsp;<span class="arrow">&#9660;</span></h2>
+            <div class="toggle-content">
+                <ol>
+                    <li>First install strongSwan plugin for NetworkManager with: sudo apt-get install network-manager-strongswan</li>
+                    <li>Download the .p12 generated file</li>
+                    <li>Extract the CA certificate with: openssl pkcs12 -in vpnclient.p12 -cacerts -nokeys -out ca.cer</li>
+                    <li>Extract the client certificate with: openssl pkcs12 -in vpnclient.p12 -clcerts -nokeys -out client.cer</li>
+                    <li>Extract the private keyLaunch with: openssl pkcs12 -in vpnclient.p12 -nocerts -nodes  -out client.key</li>
+                    <li>You can then set up and enable the VPN connection:</li>
+                    <li>Go to Network Settings -> VPN -> Add -> IPsec/IKEv2 (strongSwan)</li>
+                    <li>Fill in the Gateway, with the server's IPv4</li>
+                    <li>Select the ca.cer file for the Certificate.</li>
+                    <li>In the Client section, select Certificate(/private key) in the Authentication drop-down menu.</li>
+                    <li>Select Certificate/private key in the Certificate drop-down menu (if exists).</li>
+                    <li>Select the client.cer file for the Certificate (file).</li>
+                    <li>Select the client.key file for the Private key.</li>
+                    <li>In the Options section, check the Request an inner IP address checkbox.</li>
+                    <li>In the Cipher proposals (Algorithms) section, check the Enable custom proposals checkbox.</li>
+                    <li>Leave the IKE field blank.</li>
+                    <li>Enter aes128gcm16 in the ESP field.</li>
+                    <li>Click Add to save the VPN connection information.</li>
+                    <li>Turn the VPN switch ON.</li>
+                </ol>
+            </div>
         </div>
     </div>
     <script src="index.js"></script>
